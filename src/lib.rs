@@ -18,17 +18,6 @@ use rand::prelude::*;
 pub mod pattern {
     use super::*;
 
-    /// Applies toggle pattern to a single word using graphemes.
-    fn toggle_word(word: &str) -> String {
-        let mut chars = word.chars();
-
-        if let Some(c) = chars.next() {
-            [c.to_lowercase().collect(), chars.as_str().to_uppercase()].concat()
-        } else {
-            String::new()
-        }
-    }
-
     /// Makes the first letter of each word lowercase
     /// and the remaining letters of each word uppercase.
     /// ```
@@ -39,8 +28,20 @@ pub mod pattern {
     ///     vec!["cASE", "cONVERSION", "lIBRARY"],
     /// );
     /// ```
-    pub const TOGGLE: Pattern =
-        Pattern::Custom(|words| words.iter().map(|word| toggle_word(word)).collect());
+    pub const TOGGLE: Pattern = Pattern::Custom(|words| {
+        words
+            .iter()
+            .map(|word| {
+                let mut chars = word.chars();
+
+                if let Some(c) = chars.next() {
+                    [c.to_lowercase().collect(), chars.as_str().to_uppercase()].concat()
+                } else {
+                    String::new()
+                }
+            })
+            .collect()
+    });
 
     /// Makes each letter of each word alternate between lowercase and uppercase.
     ///
@@ -90,6 +91,7 @@ pub mod pattern {
     /// ```
     /// # #[cfg(any(doc, feature = "random"))]
     /// use convert_case_extras::pattern;
+    ///
     /// pattern::RANDOM.mutate(&["Case", "CONVERSION", "library"]);
     /// // "casE", "coNVeRSiOn", "lIBraRY"
     /// ```
@@ -105,6 +107,62 @@ pub mod pattern {
                             letter.to_uppercase().to_string()
                         } else {
                             letter.to_lowercase().to_string()
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
+    });
+
+    /// Case each letter in random-like patterns.
+    ///
+    /// Instead of randomizing
+    /// each letter individually, it mutates each pair of characters
+    /// as either (Lowercase, Uppercase) or (Uppercase, Lowercase).  This generates
+    /// more "random looking" words.  A consequence of this algorithm for randomization
+    /// is that there will never be three consecutive letters that are all lowercase
+    /// or all uppercase.  This uses the `rand` crate and is only available with the "random"
+    /// feature.
+    ///
+    /// This uses the `rand` crate and is only available with the "random" feature.
+    /// ```
+    /// # #[cfg(any(doc, feature = "random"))]
+    /// use convert_case_extras::pattern;
+    ///
+    /// pattern::PSEUDO_RANDOM.mutate(&["Case", "CONVERSION", "library"]);
+    /// // "cAsE", "cONveRSioN", "lIBrAry"
+    /// ```
+    #[cfg(feature = "random")]
+    pub const PSEUDO_RANDOM: Pattern = Pattern::Custom(|words| {
+        let mut rng = rand::thread_rng();
+
+        // Keeps track of when to alternate
+        let mut alt: Option<bool> = None;
+        words
+            .iter()
+            .map(|word| {
+                word.chars()
+                    .map(|letter| {
+                        match alt {
+                            // No existing pattern, start one
+                            None => {
+                                if rng.gen::<f32>() > 0.5 {
+                                    alt = Some(false); // Make the next char lower
+                                    letter.to_uppercase().to_string()
+                                } else {
+                                    alt = Some(true); // Make the next char upper
+                                    letter.to_lowercase().to_string()
+                                }
+                            }
+                            // Existing pattern, do what it says
+                            Some(upper) => {
+                                alt = None;
+                                if upper {
+                                    letter.to_uppercase().to_string()
+                                } else {
+                                    letter.to_lowercase().to_string()
+                                }
+                            }
                         }
                     })
                     .collect()
@@ -170,6 +228,30 @@ pub mod case {
     pub const RANDOM: Case = Case::Custom {
         boundaries: &[Boundary::Space],
         pattern: pattern::RANDOM,
+        delim: " ",
+    };
+
+    /// Pseudo-random case strings are delimited by spaces and characters are randomly
+    /// upper case or lower case, but there will never more than two consecutive lower
+    /// case or upper case letters in a row.
+    ///
+    /// This uses the `rand` crate and is
+    /// only available with the "random" feature.
+    /// * Boundaries: [Space](Boundary::Space)
+    /// * Pattern: [Pseudo random](pattern::PSEUDO_RANDOM)
+    /// * Delimeter: Space `" "`
+    ///
+    /// ```
+    /// use convert_case::Casing;
+    /// use convert_case_extras::case;
+    /// let new = "My variable NAME".to_case(case::PSEUDO_RANDOM);
+    /// ```
+    /// String `new` could be "mY vArIAblE NamE" for example.
+    #[cfg(any(doc, feature = "random"))]
+    #[cfg(feature = "random")]
+    pub const PSEUDO_RANDOM: Case = Case::Custom {
+        boundaries: &[Boundary::Space],
+        pattern: pattern::PSEUDO_RANDOM,
         delim: " ",
     };
 }
