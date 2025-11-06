@@ -29,14 +29,56 @@ pub mod pattern {
     /// Makes the first letter of each word lowercase
     /// and the remaining letters of each word uppercase.
     /// ```
-    /// # use convert_case::Pattern;
+    /// use convert_case_extras::pattern;
+    ///
     /// assert_eq!(
-    ///     Pattern::Toggle.mutate(&["Case", "CONVERSION", "library"]),
+    ///     pattern::TOGGLE.mutate(&["Case", "CONVERSION", "library"]),
     ///     vec!["cASE", "cONVERSION", "lIBRARY"],
     /// );
     /// ```
     pub const TOGGLE: Pattern =
         Pattern::Custom(|words| words.iter().map(|word| toggle_word(word)).collect());
+
+    /// Makes each letter of each word alternate between lowercase and uppercase.
+    ///
+    /// It alternates across words,
+    /// which means the last letter of one word and the first letter of the
+    /// next will not be the same letter casing.
+    /// ```
+    /// use convert_case_extras::pattern;
+    ///
+    /// assert_eq!(
+    ///     pattern::ALTERNATING.mutate(&["Case", "CONVERSION", "library"]),
+    ///     vec!["cAsE", "cOnVeRsIoN", "lIbRaRy"],
+    /// );
+    /// assert_eq!(
+    ///     pattern::ALTERNATING.mutate(&["Another", "Example"]),
+    ///     vec!["aNoThEr", "ExAmPlE"],
+    /// );
+    /// ```
+    pub const ALTERNATING: Pattern = Pattern::Custom(|words| {
+        let mut upper = false;
+        words
+            .iter()
+            .map(|word| {
+                word.chars()
+                    .map(|letter| {
+                        if letter.is_uppercase() || letter.is_lowercase() {
+                            if upper {
+                                upper = false;
+                                letter.to_uppercase().to_string()
+                            } else {
+                                upper = true;
+                                letter.to_lowercase().to_string()
+                            }
+                        } else {
+                            letter.to_string()
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
+    });
 }
 
 pub mod case {
@@ -49,15 +91,30 @@ pub mod case {
     /// * Delimeter: Space `" "`
     ///
     /// ```
-    /// use convert_case::ccase;
-    /// assert_eq!(ccase!(toggle, "My variable NAME"), "mY vARIABLE nAME");
-    ///
-    /// use convert_case::{Case, Casing};
-    /// assert_eq!("My variable NAME".to_case(Case::Toggle), "mY vARIABLE nAME");
+    /// use convert_case::Casing;
+    /// use convert_case_extras::case;
+    /// assert_eq!("My variable NAME".to_case(case::TOGGLE), "mY vARIABLE nAME");
     /// ```
     pub const TOGGLE: Case = Case::Custom {
         boundaries: &[Boundary::Space],
         pattern: pattern::TOGGLE,
+        delim: " ",
+    };
+
+    /// Alternating case strings are delimited by spaces.  Characters alternate between uppercase
+    /// and lowercase.
+    /// * Boundaries: [Space](Boundary::Space)
+    /// * Pattern: [Alternating](Pattern::Alternating)
+    /// * Delimeter: Space `" "`
+    ///
+    /// ```
+    /// use convert_case::Casing;
+    /// use convert_case_extras::case;
+    /// assert_eq!("My variable NAME".to_case(case::ALTERNATING), "mY vArIaBlE nAmE");
+    /// ```
+    pub const ALTERNATING: Case = Case::Custom {
+        boundaries: &[Boundary::Space],
+        pattern: pattern::ALTERNATING,
         delim: " ",
     };
 }
