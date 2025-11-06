@@ -1,4 +1,4 @@
-//! Extra utilities for `convert_case`.
+//! Extra utilities for [`convert_case`].
 //!
 //! ```
 //! use convert_case::Casing;
@@ -11,6 +11,9 @@
 //! ```
 
 use convert_case::{Boundary, Case, Pattern};
+
+#[cfg(feature = "random")]
+use rand::prelude::*;
 
 pub mod pattern {
     use super::*;
@@ -79,6 +82,35 @@ pub mod pattern {
             })
             .collect()
     });
+
+    // #[doc(cfg(feature = "random"))]
+    /// Lowercases or uppercases each letter uniformly randomly.
+    ///
+    /// This uses the `rand` crate and is only available with the "random" feature.
+    /// ```
+    /// # #[cfg(any(doc, feature = "random"))]
+    /// use convert_case_extras::pattern;
+    /// pattern::RANDOM.mutate(&["Case", "CONVERSION", "library"]);
+    /// // "casE", "coNVeRSiOn", "lIBraRY"
+    /// ```
+    #[cfg(feature = "random")]
+    pub const RANDOM: Pattern = Pattern::Custom(|words| {
+        let mut rng = rand::thread_rng();
+        words
+            .iter()
+            .map(|word| {
+                word.chars()
+                    .map(|letter| {
+                        if rng.gen::<f32>() > 0.5 {
+                            letter.to_uppercase().to_string()
+                        } else {
+                            letter.to_lowercase().to_string()
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
+    });
 }
 
 pub mod case {
@@ -115,6 +147,29 @@ pub mod case {
     pub const ALTERNATING: Case = Case::Custom {
         boundaries: &[Boundary::Space],
         pattern: pattern::ALTERNATING,
+        delim: " ",
+    };
+
+    /// Random case strings are delimited by spaces and characters are
+    /// randomly upper case or lower case.
+    ///
+    /// This uses the `rand` crate
+    /// and is only available with the "random" feature.
+    /// * Boundaries: [Space](Boundary::Space)
+    /// * Pattern: [Random](pattern::RANDOM)
+    /// * Delimeter: Space `" "`
+    ///
+    /// ```
+    /// use convert_case::Casing;
+    /// use convert_case_extras::case;
+    /// "My variable NAME".to_case(case::RANDOM);
+    /// // "My vaRIAbLE nAme"
+    /// ```
+    #[cfg(any(doc, feature = "random"))]
+    #[cfg(feature = "random")]
+    pub const RANDOM: Case = Case::Custom {
+        boundaries: &[Boundary::Space],
+        pattern: pattern::RANDOM,
         delim: " ",
     };
 }
