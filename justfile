@@ -16,7 +16,7 @@ doc:
     cargo doc --all-features
 
 open-doc:
-    xdg-open target/doc/convert_case/index.html
+    xdg-open target/doc/convert_case_extras/index.html
 
 watch-doc:
     watchexec -- "just doc && cargo test --all-features --doc"
