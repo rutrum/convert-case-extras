@@ -352,7 +352,7 @@ pub mod case {
     /// for the leading character of each word, which is lowercase.
     /// * Boundaries: [Space](`Boundary::Space`)
     /// * Pattern: [Toggle](`pattern::TOGGLE`)
-    /// * Delimeter: Space `" "`
+    /// * Delimiter: Space `" "`
     ///
     /// ```
     /// use convert_case::Casing;
@@ -369,7 +369,7 @@ pub mod case {
     /// and lowercase.
     /// * Boundaries: [Space](Boundary::Space)
     /// * Pattern: [Alternating](Pattern::Alternating)
-    /// * Delimeter: Space `" "`
+    /// * Delimiter: Space `" "`
     ///
     /// ```
     /// use convert_case::Casing;
@@ -389,7 +389,7 @@ pub mod case {
     /// and is only available with the "random" feature.
     /// * Boundaries: [Space](Boundary::Space)
     /// * Pattern: [Random](pattern::RANDOM)
-    /// * Delimeter: Space `" "`
+    /// * Delimiter: Space `" "`
     ///
     /// ```
     /// use convert_case::Casing;
@@ -413,7 +413,7 @@ pub mod case {
     /// only available with the "random" feature.
     /// * Boundaries: [Space](Boundary::Space)
     /// * Pattern: [Pseudo random](pattern::PSEUDO_RANDOM)
-    /// * Delimeter: Space `" "`
+    /// * Delimiter: Space `" "`
     ///
     /// ```
     /// use convert_case::Casing;
