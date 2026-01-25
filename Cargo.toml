@@ -1,6 +1,6 @@
 [package]
 name = "convert_case_extras"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["rutrum <dave@rutrum.net>"]
 edition = "2021"
 description = "Extra features for convert_case"
@@ -19,5 +19,5 @@ panic = 'abort'
 random = ["rand"]
 
 [dependencies]
-convert_case = "0.9.0"
+convert_case = { path = "../convert-case" }
 rand = { version = "^0.8", optional = true }

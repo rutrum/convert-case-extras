@@ -14,10 +14,180 @@
 //!
 //! The `random` feature contains `case::RANDOM` and `case::PSEUDO_RANDOM`.
 
-use convert_case::{Boundary, Case, Pattern};
+use convert_case::{Boundary, Case, Casing, Pattern};
 
 #[cfg(feature = "random")]
 use rand::prelude::*;
+
+/// Checks if a string matches the specified case.
+///
+/// A string matches a case if converting it to that case produces
+/// the same string (i.e., `s.to_case(case) == s`).
+///
+/// # Example
+/// ```
+/// use convert_case::Case;
+/// use convert_case_extras::is_case;
+///
+/// assert!(is_case("hello_world", Case::Snake));
+/// assert!(!is_case("hello_world", Case::Kebab));
+/// assert!(is_case("HelloWorld", Case::Pascal));
+/// ```
+pub fn is_case<T: AsRef<str>>(s: T, case: Case) -> bool {
+    s.as_ref() == s.as_ref().to_case(case)
+}
+
+/// A detector for determining which cases a string matches.
+///
+/// `CaseDetector` maintains a pool of cases and provides a method
+/// to detect which cases from the pool match a given string.
+///
+/// # Example
+/// ```
+/// use convert_case::Case;
+/// use convert_case_extras::CaseDetector;
+///
+/// // Default detector with all standard cases
+/// let detector = CaseDetector::default();
+/// let matches = detector.detect_cases("my_variable_name");
+/// assert!(matches.contains(&Case::Snake));
+///
+/// // Custom detector with specific cases
+/// let detector = CaseDetector::new()
+///     .add_case(Case::Snake)
+///     .add_case(Case::Kebab);
+/// let matches = detector.detect_cases("hello-world");
+/// assert_eq!(matches, vec![Case::Kebab]);
+/// ```
+#[derive(Debug, Clone)]
+pub struct CaseDetector {
+    cases: Vec<Case<'static>>,
+}
+
+impl CaseDetector {
+    /// Creates a new `CaseDetector` with an empty pool.
+    ///
+    /// Use builder methods like `add_case` to populate the pool.
+    /// 
+    /// Use `default` instead to use all of the cases available in `convert-case`.
+    ///
+    /// # Example
+    /// ```
+    /// use convert_case::Case;
+    /// use convert_case_extras::CaseDetector;
+    ///
+    /// let detector = CaseDetector::new()
+    ///     .add_case(Case::Snake)
+    ///     .add_case(Case::Kebab);
+    /// ```
+    pub fn new() -> Self {
+        Self { cases: Vec::new() }
+    }
+
+    /// Adds a case to the pool. Returns self for method chaining.
+    ///
+    /// # Example
+    /// ```
+    /// use convert_case::Case;
+    /// use convert_case_extras::CaseDetector;
+    ///
+    /// let detector = CaseDetector::new()
+    ///     .add_case(Case::Snake)
+    ///     .add_case(Case::Kebab);
+    /// ```
+    pub fn add_case(mut self, case: Case<'static>) -> Self {
+        self.cases.push(case);
+        self
+    }
+
+    /// Adds multiple cases to the pool. Returns self for method chaining.
+    ///
+    /// # Example
+    /// ```
+    /// use convert_case::Case;
+    /// use convert_case_extras::CaseDetector;
+    ///
+    /// let detector = CaseDetector::new()
+    ///     .add_cases(&[Case::Snake, Case::Kebab, Case::Camel]);
+    /// ```
+    pub fn add_cases(mut self, cases: &[Case<'static>]) -> Self {
+        self.cases.extend(cases.iter().copied());
+        self
+    }
+
+    /// Removes a case from the pool. Returns self for method chaining.
+    ///
+    /// # Example
+    /// ```
+    /// use convert_case::Case;
+    /// use convert_case_extras::CaseDetector;
+    ///
+    /// let detector = CaseDetector::default()
+    ///     .remove_case(Case::Flat)
+    ///     .remove_case(Case::UpperFlat);
+    /// ```
+    pub fn remove_case(mut self, case: Case<'static>) -> Self {
+        self.cases.retain(|&c| c != case);
+        self
+    }
+
+    /// Removes multiple cases from the pool. Returns self for method chaining.
+    ///
+    /// # Example
+    /// ```
+    /// use convert_case::Case;
+    /// use convert_case_extras::CaseDetector;
+    ///
+    /// let detector = CaseDetector::default()
+    ///     .remove_cases(&[Case::Flat, Case::UpperFlat]);
+    /// ```
+    pub fn remove_cases(mut self, cases: &[Case<'static>]) -> Self {
+        for case in cases {
+            self.cases.retain(|&c| c != *case);
+        }
+        self
+    }
+
+    /// Detects all cases from the pool that the given string matches.
+    ///
+    /// A string "matches" a case if converting it to that case produces
+    /// the same string (i.e., `s.to_case(case) == s`).
+    ///
+    /// # Example
+    /// ```
+    /// use convert_case::Case;
+    /// use convert_case_extras::CaseDetector;
+    ///
+    /// let detector = CaseDetector::default();
+    ///
+    /// let matches = detector.detect_cases("hello_world");
+    /// assert!(matches.contains(&Case::Snake));
+    /// assert!(!matches.contains(&Case::Kebab));
+    ///
+    /// // Single lowercase word matches multiple cases
+    /// let matches = detector.detect_cases("word");
+    /// assert!(matches.contains(&Case::Snake));
+    /// assert!(matches.contains(&Case::Kebab));
+    /// assert!(matches.contains(&Case::Flat));
+    /// ```
+    pub fn detect_cases<T: AsRef<str>>(&self, s: T) -> Vec<Case<'static>> {
+        let s = s.as_ref();
+        self.cases
+            .iter()
+            .filter(|&&case| is_case(s, case))
+            .copied()
+            .collect()
+    }
+}
+
+impl Default for CaseDetector {
+    /// Creates a `CaseDetector` with all standard cases from `Case::all_cases()`.
+    fn default() -> Self {
+        Self {
+            cases: Case::all_cases().to_vec(),
+        }
+    }
+}
 
 pub mod pattern {
     use super::*;
@@ -192,7 +362,7 @@ pub mod case {
     pub const TOGGLE: Case = Case::Custom {
         boundaries: &[Boundary::Space],
         pattern: pattern::TOGGLE,
-        delim: " ",
+        delimiter: " ",
     };
 
     /// Alternating case strings are delimited by spaces.  Characters alternate between uppercase
@@ -209,7 +379,7 @@ pub mod case {
     pub const ALTERNATING: Case = Case::Custom {
         boundaries: &[Boundary::Space],
         pattern: pattern::ALTERNATING,
-        delim: " ",
+        delimiter: " ",
     };
 
     /// Random case strings are delimited by spaces and characters are
@@ -232,7 +402,7 @@ pub mod case {
     pub const RANDOM: Case = Case::Custom {
         boundaries: &[Boundary::Space],
         pattern: pattern::RANDOM,
-        delim: " ",
+        delimiter: " ",
     };
 
     /// Pseudo-random case strings are delimited by spaces and characters are randomly
@@ -256,7 +426,7 @@ pub mod case {
     pub const PSEUDO_RANDOM: Case = Case::Custom {
         boundaries: &[Boundary::Space],
         pattern: pattern::PSEUDO_RANDOM,
-        delim: " ",
+        delimiter: " ",
     };
 }
 
@@ -276,7 +446,7 @@ mod test {
     fn pseudo_no_triples() {
         let words = vec!["abcdefg", "hijklmnop", "qrstuv", "wxyz"];
         for _ in 0..5 {
-            let new = Pattern::PseudoRandom.mutate(&words).join("");
+            let new = pattern::PSEUDO_RANDOM.mutate(&words).join("");
             let mut iter = new
                 .chars()
                 .zip(new.chars().skip(1))
@@ -296,9 +466,9 @@ mod test {
         let words = vec!["abcdefg", "hijklmnop", "qrstuv", "wxyz"];
 
         for _ in 0..5 {
-            let transformed = Pattern::PseudoRandom.mutate(&words);
+            let transformed = pattern::PSEUDO_RANDOM.mutate(&words);
             assert_ne!(words, transformed);
-            let transformed = Pattern::Random.mutate(&words);
+            let transformed = pattern::RANDOM.mutate(&words);
             assert_ne!(words, transformed);
         }
     }
