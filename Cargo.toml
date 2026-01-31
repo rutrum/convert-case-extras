@@ -19,5 +19,5 @@ panic = 'abort'
 random = ["rand"]
 
 [dependencies]
-convert_case = { path = "../convert-case" }
+convert_case = { version = "0.11.0" }
 rand = { version = "^0.8", optional = true }
