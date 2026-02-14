@@ -14,7 +14,7 @@ Extra patterns, boundaries, cases, and utilities on top of [`convert_case`](http
     * `.remove_case()` / `.remove_cases()`: remove cases from the pool
     * `.detect_cases(s)`: returns all cases from the pool that match the string
 
-tr# convert-case-extras v0.1.0
+### convert-case-extras v0.1.0
 
 * `case::TOGGLE`: words start with lower case and remainder are upper case
 * `case::ALTERNATING`: words alternate between upper and lower case
