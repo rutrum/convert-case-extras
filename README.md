@@ -4,6 +4,10 @@ Extra patterns, boundaries, cases, and utilities on top of [`convert_case`](http
 
 ## Changelog
 
+### convert-case-extras v0.3.0
+
+* Updated `convert_case` to 0.12.0.
+
 ### convert-case-extras v0.2.0
 
 * `is_case(s, case)`: checks if a string matches a specified case
